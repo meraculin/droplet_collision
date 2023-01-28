@@ -1,5 +1,4 @@
 import numpy as np
-import itertools
 from matplotlib import pyplot as plt
 
 # Starting point of the fitted line
@@ -49,28 +48,69 @@ ndata = len(area)
 
 for i in range(ndata):
     if area[i] >= threshold:
-        nonCollision.append(minima[i])
+        nonCollision.append(i)
     else:
-        nonCollision.append('')
+        nonCollision.append("")
 
 for i in range(ndata):
     if area[i] <= threshold:
-        collision.append(minima[i])
+        collision.append(i)
     else:
-        collision.append('')
+        collision.append("")
+
+def group_and_slice(data, threshold, percentage):
+    """
+    Group and slice the input data.
+    
+    Parameters:
+    data (list): The input data to be processed
+    threshold (int): The threshold value to group the data
+    percentage (float): The percentage of each group to retain
+    
+    Returns:
+    list: The processed data
+    """
+    groups = []
+    current_group = [data[0]]
+    for i in range(1, len(data)):
+        if isinstance(data[i], int) and isinstance(data[i-1], int) and data[i] - data[i-1] <= threshold:
+            current_group.append(data[i])
+        else:
+            groups.append(current_group)
+            current_group = [data[i]]
+    groups.append(current_group)
+    
+    new_data = []
+    for group in groups:
+        slice_count = int(percentage * len(group) / 100)
+        new_data.extend(group[:slice_count])
+        new_data.extend([''] * (len(group) - slice_count))
+    return new_data
+
+threshold, percentage = 30, 90
+collision, nonCollision = group_and_slice(collision,threshold,percentage), group_and_slice(nonCollision,threshold,percentage)
 
 # Saves the result into one single list
 result = []
-for i in range(0, ndata):
-    result.append([])
-    result[i].append(x[i])
-    result[i].append(minima[i])
-    result[i].append(nonCollision[i])
-    result[i].append(collision[i])
+def Result():
+    for i in range(0, ndata):
+        result.append([])
+        result[i].append(x[i])
+        result[i].append(minima[i])
+        if nonCollision[i]!= '':
+            result[i].append(minima[int(nonCollision[i])])
+        else:
+            result[i].append(nonCollision[i])
+        if collision[i]!= '':
+            result[i].append(minima[int(collision[i])])
+        else:
+            result[i].append(collision[i])
 
-# Saves the result into a .txt file
-with open("data/Collision.txt", "w") as file:
-    for row in result:
-        file.write('\t'.join(map(str,row))+'\n')
+    # Saves the result into a .txt file
+    with open("data/collisionResult.txt", "w") as file:
+        for row in result:
+            file.write('\t'.join(map(str,row))+'\n')
 
-print("Data saved to Collision.txt")
+    print("Data saved to Collision.txt")
+
+Result()

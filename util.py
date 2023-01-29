@@ -76,3 +76,36 @@ def convert_data(data, source):
     for item in data:
         temp.append(source[item])
     return temp
+
+def group_and_slice(data, threshold, percentage):
+    """
+    Group and slice the input data.
+    
+    Parameters:
+    data (list): The input data to be processed
+    threshold (int): The threshold value to group the data
+    percentage (float): The percentage of each group to retain
+    
+    Returns:
+    list: The processed data
+    """
+    groups = []
+    current_group = [data[0]]
+    for i in range(1, len(data)):
+        if abs(data[i] - current_group[-1]) <= threshold:
+            current_group.append(data[i])
+        else:
+            groups.append(current_group)
+            current_group = [data[i]]
+    groups.append(current_group)
+
+    new_data =[]
+    for group in groups:
+        slice_count = int(percentage * len(group) / 100)
+        middle = int(len(group)/2)
+        front_slice = middle - int(slice_count/2)
+        back_slice = middle + int(slice_count/2)
+
+        new_data.extend(group[front_slice:back_slice+1])
+    
+    return new_data   

@@ -1,113 +1,49 @@
-# Starting point of the fitted line
-startPoint = int(266)
+import util
+import roiFiles
+roiFiles.roiNumbering()
+# Initial values
+startPoint = int(260)
+x, minima, area = util.openFiles(startPoint, 'data/roiNumbering.txt','data/localMinima.txt','data/aParticle.txt')
+
 # Threshold for collision detection
 ratio = float(0.98)
-
-#Read roiNumbering.txt
-with open('data/roiNumbering.txt', 'r') as file:
-    x = []
-    for line in file:
-        values = line.strip().split('\t')
-        x.append(int(values[0]))
-
-# Read the LocalMinima.txt result
-with open('data/localMinima.txt', 'r') as file:
-    # initialize empty lists to store the data
-    minima = []
-    for line in file:
-            values = line.strip().split('\t')
-            minima.append(int(values[0])+startPoint)
-
-# Read the x and localMinima to match the index
-temp = []
-for i in x:
-    temp.append(minima[i])
-minima = temp
-
-# Read the result of analyze particle; aParticle.txt
-with open('data/aParticle.txt', 'r') as file:
-    # Read the first line (the header) and split it on the tab character
-    header = file.readline().strip().split('\t')
-    # initialize empty lists to store the data
-    area = []
-    # iterate over each line in the file
-    for line in file:
-        # split the line by the tab character
-        values = line.strip().split('\t')
-        # add the values to the appropriate list
-        area.append(round(float(values[1])))
-
 reference_area = float(area[0])
-threshold = ratio * reference_area
-
-nonCollision, collision = [], []
+area_threshold = ratio * reference_area
 ndata = len(area)
 
-for i in range(ndata):
-    if area[i] >= threshold:
-        nonCollision.append(i)
-    else:
-        nonCollision.append("")
+# Threshold and percentage of slicing
+threshold, percentage = 20, 60
+
+data_nonCollision, data_collision = [], []
 
 for i in range(ndata):
-    if area[i] <= threshold:
-        collision.append(i)
-    else:
-        collision.append("")
+    if area[i] >= area_threshold:
+        data_nonCollision.append(i)
+    else: 
+        data_collision.append(i)
 
-def group_and_slice(data, threshold, percentage):
-    """
-    Group and slice the input data.
-    
-    Parameters:
-    data (list): The input data to be processed
-    threshold (int): The threshold value to group the data
-    percentage (float): The percentage of each group to retain
-    
-    Returns:
-    list: The processed data
-    """
-    groups = []
-    current_group = [data[0]]
-    for i in range(1, len(data)):
-        if isinstance(data[i], int) and isinstance(data[i-1], int) and data[i] - data[i-1] <= threshold:
-            current_group.append(data[i])
-        else:
-            groups.append(current_group)
-            current_group = [data[i]]
-    groups.append(current_group)
-    
-    new_data = []
-    for group in groups:
-        slice_count = int(percentage * len(group) / 100)
-        new_data.extend(group[:slice_count])
-        new_data.extend([''] * (len(group) - slice_count))
-    return new_data
+data_nonCollision, data_collision = util.group_and_slice(data_nonCollision,threshold,percentage), util.group_and_slice(data_collision,threshold,percentage)
 
-threshold, percentage = 30, 90
-collision, nonCollision = group_and_slice(collision,threshold,percentage), group_and_slice(nonCollision,threshold,percentage)
+collision, nonCollision = util.empty_list(len(minima)), util.empty_list(len(minima))
 
-# Saves the result into one single list
+util.match_data(data_collision,minima,collision)
+util.match_data(data_nonCollision,minima,nonCollision)
+
+# Save the result of calculation
 result = []
-def saveCollision():
-    for i in range(0, ndata):
-        result.append([])
-        result[i].append(x[i])
-        result[i].append(minima[i])
-        if nonCollision[i]!= '':
-            result[i].append(minima[int(nonCollision[i])])
-        else:
-            result[i].append(nonCollision[i])
-        if collision[i]!= '':
-            result[i].append(minima[int(collision[i])])
-        else:
-            result[i].append(collision[i])
+util.saveCollision(x, minima, nonCollision, collision, ndata, result)
 
-    # Saves the result into a .txt file
-    with open("data/collisionResult.txt", "w") as file:
-        for row in result:
-            file.write('\t'.join(map(str,row))+'\n')
+initialState = []
+for index in range(ndata):
+    initialState.append(minima[index])
+    avg = util.average(initialState)
+    if minima[index] <= avg * 1.1 or  minima[index] >= avg * 0.9:
+        continue
+    else:
+        break
 
-    print("Data saved to collisionResult.txt")
-
-saveCollision()
+realdata_collision = util.convert_data(data_collision, minima)    
+mean_collision = util.average(realdata_collision)
+mean_initialstate = util.average(initialState)
+deltaX = abs(mean_collision-mean_initialstate)
+print("Average collision:", mean_collision,"\nAverage intial state: ",mean_initialstate,"\ndeltaX:",deltaX)

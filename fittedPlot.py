@@ -47,6 +47,6 @@ if rectangle[:5] == 'makeR':
     x2 = x1 + width
     y2 = x2*b + a
 
-    print(f'makeLine({x1},{y1},{x2},{y2})')
+    print(f'makeLine({x1},{y1},{x2},{y2});')
 else:
     print("Wrong equation!")

@@ -1,10 +1,12 @@
-def openFiles(startPoint,roi, minima, analyze_particle):
+def openFiles(startPoint,path):
     '''
     roi = 'data/roiNumbering.txt'
     minima = 'data/localMinima.txt'
     analyze_particle = 'data/aParticle.txt'
     '''
-
+    roi = f'data/roi_numbering/{path}.txt'
+    minima = f'data/localminima/{path}.txt'
+    analyze_particle = f'data/analyze_particle/{path}.txt'
     #Read roiNumbering.txt
     with open(roi, 'r') as file:
         x = []
@@ -15,11 +17,11 @@ def openFiles(startPoint,roi, minima, analyze_particle):
     # Read the LocalMinima.txt result
     with open(minima, 'r') as file:
         # initialize empty lists to store the data
+        header = file.readline().strip().split('\t')
         minima = []
         for line in file:
                 values = line.strip().split('\t')
                 minima.append(int(values[0])+startPoint)
-
     # Read the x and localMinima to match the index
     temp = []
     for i in x:
@@ -53,28 +55,46 @@ def match_data(data, source, destination):
         if i in data:
             destination[i] = i
 
-def saveCollision(x, minima, nonCollision, collision, ndata, result):
+def saveCollision(x, minima, nonCollision, collision, initial, ndata, path):
+    result = []
     for i in range(0, ndata):
         result.append([])
         result[i].append(x[i])
         result[i].append(minima[i])
         result[i].append(nonCollision[i])
         result[i].append(collision[i])
+        if i <= len(initial):
+            result[i].append(initial[i])
+        else:
+            result[i].append('')
 
     # Saves the result into a .txt file
-    with open("data/collisionResult.txt", "w") as file:
+    with open(f"data/collision_result/{path}.txt", "w") as file:
         for row in result:
             file.write('\t'.join(map(str,row))+'\n')
 
-    print("Data saved to collisionResult.txt")
+    print(f"Data saved to data/collision_result/{path}.txt")
 
 def average(lst):
     return sum(lst)/len(lst)
 
 def convert_data(data, source):    
+    '''
+    Converts the data comprised of index into the actual grey value.
+
+    Parameters:
+    data (list): The input data to be processed, usually 'collision'
+    source (list): The reference data comprised of grey value
+
+    Returns:
+    temp(list): The converted list with grey value
+    '''
     temp = []
     for item in data:
-        temp.append(source[item])
+        if item != '':
+            temp.append(source[item])
+        else:
+            temp.append('')
     return temp
 
 def group_and_slice(data, threshold, percentage):
@@ -108,4 +128,4 @@ def group_and_slice(data, threshold, percentage):
 
         new_data.extend(group[front_slice:back_slice+1])
     
-    return new_data   
+    return new_data        
